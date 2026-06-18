@@ -71,7 +71,7 @@ export default async function CobrosPage({ searchParams }: Props) {
                       ${(c.importe as number).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
-                  <AnularButton onAnular={(motivo) => anularCobro(c.id, motivo)} />
+                  <AnularButton onAnular={anularCobro.bind(null, c.id)} />
                 </CardContent>
               </Card>
             ))}

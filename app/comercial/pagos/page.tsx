@@ -79,7 +79,7 @@ export default async function PagosPage({ searchParams }: Props) {
                   {p.observacion && (
                     <p className="text-xs text-muted-foreground">{p.observacion as string}</p>
                   )}
-                  <AnularButton onAnular={(motivo) => anularPago(p.id, motivo)} />
+                  <AnularButton onAnular={anularPago.bind(null, p.id)} />
                 </CardContent>
               </Card>
             ))}

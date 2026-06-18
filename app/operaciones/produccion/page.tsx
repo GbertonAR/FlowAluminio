@@ -117,7 +117,7 @@ export default async function ProduccionListPage({ searchParams }: Props) {
                     <span>Mix 1ª: <strong>{pct(p.mix_1ra_pct)}</strong></span>
                     <span>Mix 2ª: <strong>{pct(p.mix_2da_pct)}</strong></span>
                   </div>
-                  <AnularButton onAnular={(motivo) => anularProduccion(p.id, motivo)} />
+                  <AnularButton onAnular={anularProduccion.bind(null, p.id)} />
                 </CardContent>
               </Card>
             ))}

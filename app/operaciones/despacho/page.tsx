@@ -74,7 +74,7 @@ export default async function DespachoListPage({ searchParams }: Props) {
                     )}
                     {d.remito && <span>Remito: {d.remito}</span>}
                   </div>
-                  <AnularButton onAnular={(motivo) => anularDespacho(d.id, motivo)} />
+                  <AnularButton onAnular={anularDespacho.bind(null, d.id)} />
                 </CardContent>
               </Card>
             ))}

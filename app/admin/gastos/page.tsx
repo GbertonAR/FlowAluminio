@@ -72,7 +72,7 @@ export default async function GastosPage({ searchParams }: Props) {
                     )}
                     <span>{g.medio_pago_id}</span>
                   </div>
-                  <AnularButton onAnular={(motivo) => anularGasto(g.id, motivo)} />
+                  <AnularButton onAnular={anularGasto.bind(null, g.id)} />
                 </CardContent>
               </Card>
             ))}

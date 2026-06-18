@@ -101,7 +101,7 @@ export default async function CierresPage({ searchParams }: Props) {
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{(c.perfiles as unknown as { nombre: string } | null)?.nombre ?? 'Sistema'}</span>
                         <AnularButton
-                          onAnular={(motivo) => anularCierre(c.id, motivo)}
+                          onAnular={anularCierre.bind(null, c.id)}
                           label="Reabrir"
                         />
                       </div>

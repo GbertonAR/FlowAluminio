@@ -98,7 +98,7 @@ export default async function RecepcionListPage({ searchParams }: Props) {
                   {r.remito && (
                     <p className="text-xs text-muted-foreground">Remito: {r.remito}</p>
                   )}
-                  <AnularButton onAnular={(motivo) => anularRecepcion(r.id, motivo)} />
+                  <AnularButton onAnular={anularRecepcion.bind(null, r.id)} />
                 </CardContent>
               </Card>
             ))}
