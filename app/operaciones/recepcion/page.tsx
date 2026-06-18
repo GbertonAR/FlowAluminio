@@ -7,7 +7,7 @@
  * @summary    Listado de recepciones del día — mobile-first
  */
 import Link from 'next/link'
-import { Plus, Package } from 'lucide-react'
+import { Plus, Package, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -98,7 +98,12 @@ export default async function RecepcionListPage({ searchParams }: Props) {
                   {r.remito && (
                     <p className="text-xs text-muted-foreground">Remito: {r.remito}</p>
                   )}
-                  <AnularButton onAnular={anularRecepcion.bind(null, r.id)} />
+                  <div className="flex items-center gap-2">
+                    <Link href={`/operaciones/recepcion/${r.id}/editar`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Link>
+                    <AnularButton onAnular={anularRecepcion.bind(null, r.id)} />
+                  </div>
                 </CardContent>
               </Card>
             ))}

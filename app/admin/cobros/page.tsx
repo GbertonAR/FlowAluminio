@@ -7,7 +7,7 @@
  * @summary    Listado de cobros del mes — mobile-first
  */
 import Link from 'next/link'
-import { Plus, DollarSign } from 'lucide-react'
+import { Plus, DollarSign, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { SelectorMes } from '@/components/selector-mes'
@@ -71,7 +71,12 @@ export default async function CobrosPage({ searchParams }: Props) {
                       ${(c.importe as number).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
-                  <AnularButton onAnular={anularCobro.bind(null, c.id)} />
+                  <div className="flex items-center gap-2">
+                    <Link href={`/admin/cobros/${c.id}/editar`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Link>
+                    <AnularButton onAnular={anularCobro.bind(null, c.id)} />
+                  </div>
                 </CardContent>
               </Card>
             ))}

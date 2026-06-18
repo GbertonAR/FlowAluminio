@@ -7,7 +7,7 @@
  * @summary    Listado de gastos del día — mobile-first
  */
 import Link from 'next/link'
-import { Plus, Receipt } from 'lucide-react'
+import { Plus, Receipt, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { SelectorFecha } from '@/components/selector-fecha'
@@ -72,7 +72,12 @@ export default async function GastosPage({ searchParams }: Props) {
                     )}
                     <span>{g.medio_pago_id}</span>
                   </div>
-                  <AnularButton onAnular={anularGasto.bind(null, g.id)} />
+                  <div className="flex items-center gap-2">
+                    <Link href={`/admin/gastos/${g.id}/editar`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Link>
+                    <AnularButton onAnular={anularGasto.bind(null, g.id)} />
+                  </div>
                 </CardContent>
               </Card>
             ))}

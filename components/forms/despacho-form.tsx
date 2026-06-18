@@ -15,7 +15,7 @@ import { useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { despachoSchema, type DespachoFormData } from '@/lib/validations/despacho'
-import { crearDespacho } from '@/app/(operaciones)/despacho/actions'
+import { crearDespacho, actualizarDespacho } from '@/app/(operaciones)/despacho/actions'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,29 +41,33 @@ interface Maestro { id: string; nombre: string }
 interface DespachoFormProps {
   clientes: Maestro[]
   productos: Maestro[]
+  editId?: string
+  initialData?: Partial<DespachoFormData>
 }
 
-export function DespachoForm({ clientes, productos }: DespachoFormProps) {
+export function DespachoForm({ clientes, productos, editId, initialData }: DespachoFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   const form = useForm<DespachoFormData>({
     resolver: zodResolver(despachoSchema) as Resolver<DespachoFormData>,
     defaultValues: {
-      fecha:          new Date().toISOString().split('T')[0],
-      cliente_id:     '',
-      kg_despachados: undefined,
-      producto_id:    '',
-      remito:         '',
-      observacion:    '',
+      fecha:          initialData?.fecha          ?? new Date().toISOString().split('T')[0],
+      cliente_id:     initialData?.cliente_id     ?? '',
+      kg_despachados: initialData?.kg_despachados ?? undefined,
+      producto_id:    initialData?.producto_id    ?? '',
+      remito:         initialData?.remito         ?? '',
+      observacion:    initialData?.observacion    ?? '',
     },
   })
 
   function onSubmit(values: DespachoFormData) {
     startTransition(async () => {
-      const result = await crearDespacho(values)
+      const result = editId
+        ? await actualizarDespacho(editId, values)
+        : await crearDespacho(values)
       if (result.success) {
-        toast.success('Despacho registrado')
+        toast.success(editId ? 'Despacho actualizado' : 'Despacho registrado')
         router.push('/operaciones/despacho')
       } else {
         toast.error(result.error ?? 'Error al guardar')
@@ -95,12 +99,10 @@ export function DespachoForm({ clientes, productos }: DespachoFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(clientes.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el cliente">
-                      {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná el cliente" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -142,12 +144,10 @@ export function DespachoForm({ clientes, productos }: DespachoFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Producto <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(productos.map(p => [p.id, p.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Tipo de producto">
-                      {field.value ? productos.find((p) => p.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Tipo de producto" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -198,7 +198,7 @@ export function DespachoForm({ clientes, productos }: DespachoFormProps) {
           disabled={pending}
           className="w-full h-14 text-base font-semibold"
         >
-          {pending ? 'Guardando...' : 'Registrar despacho'}
+          {pending ? 'Guardando...' : editId ? 'Actualizar despacho' : 'Registrar despacho'}
         </Button>
 
       </form>

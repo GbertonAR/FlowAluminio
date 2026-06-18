@@ -72,12 +72,10 @@ export function MermaForm({ clientes, tiposChatarra }: MermaFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(clientes.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el cliente">
-                      {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná el cliente" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -97,12 +95,10 @@ export function MermaForm({ clientes, tiposChatarra }: MermaFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tipo de chatarra <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(tiposChatarra.map(t => [t.id, t.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Todos los tipos">
-                      {field.value ? tiposChatarra.find((t) => t.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Todos los tipos" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

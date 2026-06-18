@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 
 import { produccionSchema, type ProduccionFormData } from '@/lib/validations/produccion'
 import { calcularColada, calcularDesvioMezcla } from '@/lib/calculations/produccion'
-import { crearProduccion } from '@/app/(operaciones)/produccion/actions'
+import { crearProduccion, actualizarProduccion } from '@/app/(operaciones)/produccion/actions'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,30 +47,32 @@ interface ProduccionFormProps {
   clientes: Maestro[]
   productos: Maestro[]
   recetaVigente: RecetaVigente | null
+  editId?: string
+  initialData?: Partial<ProduccionFormData>
 }
 
 function pct(n: number) { return (n * 100).toFixed(1) + '%' }
 
-export function ProduccionForm({ clientes, productos, recetaVigente }: ProduccionFormProps) {
+export function ProduccionForm({ clientes, productos, recetaVigente, editId, initialData }: ProduccionFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   const form = useForm<ProduccionFormData>({
     resolver: zodResolver(produccionSchema) as Resolver<ProduccionFormData>,
     defaultValues: {
-      fecha: new Date().toISOString().split('T')[0],
-      numero_colada: 1,
-      cliente_destino_id: '',
-      propietario_1ra_id: '',
-      propietario_2da_id: '',
-      kg_1ra: 0,
-      kg_2da: 0,
-      kg_tocho: 0,
-      kg_escoria: 0,
-      kg_remanente_recibido: 0,
-      kg_remanente_dejado: 0,
-      producto_id: '',
-      observaciones: '',
+      fecha:                 initialData?.fecha                 ?? new Date().toISOString().split('T')[0],
+      numero_colada:         initialData?.numero_colada         ?? 1,
+      cliente_destino_id:    initialData?.cliente_destino_id    ?? '',
+      propietario_1ra_id:    initialData?.propietario_1ra_id    ?? '',
+      propietario_2da_id:    initialData?.propietario_2da_id    ?? '',
+      kg_1ra:                initialData?.kg_1ra                ?? 0,
+      kg_2da:                initialData?.kg_2da                ?? 0,
+      kg_tocho:              initialData?.kg_tocho              ?? 0,
+      kg_escoria:            initialData?.kg_escoria            ?? 0,
+      kg_remanente_recibido: initialData?.kg_remanente_recibido ?? 0,
+      kg_remanente_dejado:   initialData?.kg_remanente_dejado   ?? 0,
+      producto_id:           initialData?.producto_id           ?? '',
+      observaciones:         initialData?.observaciones         ?? '',
     },
   })
 
@@ -100,9 +102,11 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
 
   function onSubmit(values: ProduccionFormData) {
     startTransition(async () => {
-      const result = await crearProduccion(values)
+      const result = editId
+        ? await actualizarProduccion(editId, values)
+        : await crearProduccion(values)
       if (result.success) {
-        toast.success('Colada registrada')
+        toast.success(editId ? 'Colada actualizada' : 'Colada registrada')
         router.push('/operaciones/produccion')
       } else {
         toast.error(result.error ?? 'Error al guardar')
@@ -162,12 +166,10 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente destino <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(clientes.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el cliente">
-                      {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná el cliente" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -374,12 +376,10 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
           render={({ field }) => (
             <FormItem>
               <FormLabel>Producto <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(productos.map(p => [p.id, p.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Tipo de producto">
-                      {field.value ? productos.find((p) => p.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Tipo de producto" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -401,12 +401,10 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Propietario 1ª <span className="text-muted-foreground">(opc.)</span></FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                <Select items={Object.fromEntries(clientes.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger className="h-11 text-sm">
-                      <SelectValue placeholder="Cliente...">
-                        {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
-                      </SelectValue>
+                      <SelectValue placeholder="Cliente..." />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -424,12 +422,10 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Propietario 2ª <span className="text-muted-foreground">(opc.)</span></FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                <Select items={Object.fromEntries(clientes.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger className="h-11 text-sm">
-                      <SelectValue placeholder="Cliente...">
-                        {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
-                      </SelectValue>
+                      <SelectValue placeholder="Cliente..." />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -466,7 +462,7 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
           disabled={pending}
           className="w-full h-14 text-base font-semibold"
         >
-          {pending ? 'Guardando...' : 'Registrar colada'}
+          {pending ? 'Guardando...' : editId ? 'Actualizar colada' : 'Registrar colada'}
         </Button>
 
       </form>

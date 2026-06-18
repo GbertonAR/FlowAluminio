@@ -15,7 +15,7 @@ import { useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { pagoSchema, type PagoFormData } from '@/lib/validations/pago'
-import { crearPago } from '@/app/(comercial)/pagos/actions'
+import { crearPago, actualizarPago } from '@/app/(comercial)/pagos/actions'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,28 +38,32 @@ interface Maestro { id: string; nombre: string }
 
 interface PagoFormProps {
   proveedores: Maestro[]
+  editId?: string
+  initialData?: Partial<PagoFormData>
 }
 
-export function PagoForm({ proveedores }: PagoFormProps) {
+export function PagoForm({ proveedores, editId, initialData }: PagoFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   const form = useForm<PagoFormData>({
     resolver: zodResolver(pagoSchema) as Resolver<PagoFormData>,
     defaultValues: {
-      fecha:         new Date().toISOString().split('T')[0],
-      proveedor_id:  '',
-      importe:       undefined,
-      medio_pago_id: '',
-      observacion:   '',
+      fecha:         initialData?.fecha         ?? new Date().toISOString().split('T')[0],
+      proveedor_id:  initialData?.proveedor_id  ?? '',
+      importe:       initialData?.importe       ?? undefined,
+      medio_pago_id: initialData?.medio_pago_id ?? '',
+      observacion:   initialData?.observacion   ?? '',
     },
   })
 
   function onSubmit(values: PagoFormData) {
     startTransition(async () => {
-      const result = await crearPago(values)
+      const result = editId
+        ? await actualizarPago(editId, values)
+        : await crearPago(values)
       if (result.success) {
-        toast.success('Pago registrado')
+        toast.success(editId ? 'Pago actualizado' : 'Pago registrado')
         router.push('/comercial/pagos')
       } else {
         toast.error(result.error ?? 'Error al guardar')
@@ -91,12 +95,10 @@ export function PagoForm({ proveedores }: PagoFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Proveedor <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(proveedores.map(p => [p.id, p.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el proveedor">
-                      {field.value ? proveedores.find((p) => p.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná el proveedor" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -141,12 +143,10 @@ export function PagoForm({ proveedores }: PagoFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Medio de pago <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={MEDIOS_PAGO} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el medio">
-                      {field.value ? MEDIOS_PAGO.find((m) => m.value === field.value)?.label : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná el medio" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -175,7 +175,7 @@ export function PagoForm({ proveedores }: PagoFormProps) {
         />
 
         <Button type="submit" disabled={pending} className="w-full h-14 text-base font-semibold">
-          {pending ? 'Guardando...' : 'Registrar pago'}
+          {pending ? 'Guardando...' : editId ? 'Actualizar pago' : 'Registrar pago'}
         </Button>
 
       </form>

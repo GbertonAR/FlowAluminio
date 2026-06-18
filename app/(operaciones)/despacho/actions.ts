@@ -53,6 +53,40 @@ export async function crearDespacho(
   return { success: true, data: { id: despacho.id } }
 }
 
+export async function getDespachoById(id: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('despachos')
+    .select('id, fecha, cliente_id, kg_despachados, producto_id, remito, observacion')
+    .eq('id', id)
+    .single()
+  return data
+}
+
+export async function actualizarDespacho(id: string, data: DespachoFormData): Promise<ActionResult> {
+  const parsed = despachoSchema.safeParse(data)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'No autenticado' }
+
+  const d = parsed.data
+  const { error } = await supabase.from('despachos').update({
+    fecha:          d.fecha,
+    cliente_id:     d.cliente_id,
+    kg_despachados: d.kg_despachados,
+    producto_id:    d.producto_id || null,
+    remito:         d.remito || null,
+    observacion:    d.observacion || null,
+    updated_at:     new Date().toISOString(),
+  }).eq('id', id)
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/operaciones/despacho')
+  return { success: true }
+}
+
 export async function getDespachosDelDia(fecha: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

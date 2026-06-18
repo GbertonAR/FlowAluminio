@@ -108,12 +108,10 @@ export function PresentismoForm({ empleados, fecha, empleadoPreseleccionado }: P
           render={({ field }) => (
             <FormItem>
               <FormLabel>Empleado <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(empleados.map(e => [e.id, e.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná un empleado">
-                      {field.value ? empleados.find((e) => e.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná un empleado" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

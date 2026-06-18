@@ -75,6 +75,40 @@ export async function crearPago(values: {
   return { success: true }
 }
 
+export async function getPagoById(id: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('pagos')
+    .select('id, fecha, proveedor_id, importe, medio_pago_id, observacion')
+    .eq('id', id)
+    .single()
+  return data
+}
+
+export async function actualizarPago(id: string, values: {
+  fecha: string; proveedor_id: string; importe: number; medio_pago_id: string; observacion?: string
+}): Promise<ActionResult> {
+  const parsed = pagoSchema.safeParse(values)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Sin sesión' }
+
+  const { error } = await supabase.from('pagos').update({
+    fecha:         parsed.data.fecha,
+    proveedor_id:  parsed.data.proveedor_id,
+    importe:       parsed.data.importe,
+    medio_pago_id: parsed.data.medio_pago_id,
+    observacion:   parsed.data.observacion || null,
+    updated_at:    new Date().toISOString(),
+  }).eq('id', id)
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/comercial/pagos')
+  return { success: true }
+}
+
 export async function anularPago(id: string, motivo: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

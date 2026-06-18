@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 
 import { recepcionSchema, type RecepcionFormData } from '@/lib/validations/recepcion'
 import { calcularKgReconocidos } from '@/lib/calculations/recepcion'
-import { crearRecepcion } from '@/app/(operaciones)/recepcion/actions'
+import { crearRecepcion, actualizarRecepcion } from '@/app/(operaciones)/recepcion/actions'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,8 +48,9 @@ interface RecepcionFormProps {
   proveedores: Maestro[]
   tiposChatarra: Maestro[]
   calidades: Maestro[]
-  // merma ya cargada desde el servidor para el par cliente+tipo
   mermasPorClienteTipo: Record<string, number>
+  editId?: string
+  initialData?: Partial<RecepcionFormData>
 }
 
 export function RecepcionForm({
@@ -58,6 +59,8 @@ export function RecepcionForm({
   tiposChatarra,
   calidades,
   mermasPorClienteTipo,
+  editId,
+  initialData,
 }: RecepcionFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -65,14 +68,14 @@ export function RecepcionForm({
   const form = useForm<RecepcionFormData>({
     resolver: zodResolver(recepcionSchema),
     defaultValues: {
-      fecha: new Date().toISOString().split('T')[0],
-      cliente_id: '',
-      proveedor_id: '',
-      tipo_chatarra_id: '',
-      calidad_id: '',
-      kg_fisicos: undefined,
-      remito: '',
-      observacion: '',
+      fecha:            initialData?.fecha            ?? new Date().toISOString().split('T')[0],
+      cliente_id:       initialData?.cliente_id       ?? '',
+      proveedor_id:     initialData?.proveedor_id     ?? '',
+      tipo_chatarra_id: initialData?.tipo_chatarra_id ?? '',
+      calidad_id:       initialData?.calidad_id       ?? '',
+      kg_fisicos:       initialData?.kg_fisicos       ?? undefined,
+      remito:           initialData?.remito           ?? '',
+      observacion:      initialData?.observacion      ?? '',
     },
   })
 
@@ -88,9 +91,11 @@ export function RecepcionForm({
 
   function onSubmit(values: RecepcionFormData) {
     startTransition(async () => {
-      const result = await crearRecepcion(values)
+      const result = editId
+        ? await actualizarRecepcion(editId, values)
+        : await crearRecepcion(values)
       if (result.success) {
-        toast.success('Recepción registrada')
+        toast.success(editId ? 'Recepción actualizada' : 'Recepción registrada')
         router.push('/operaciones/recepcion')
       } else {
         toast.error(result.error ?? 'Error al guardar')
@@ -123,12 +128,10 @@ export function RecepcionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente / Cuenta <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(clientes.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná un cliente">
-                      {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná un cliente" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -148,12 +151,10 @@ export function RecepcionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tipo de chatarra <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(tiposChatarra.map(t => [t.id, t.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Tipo de chatarra">
-                      {field.value ? tiposChatarra.find((t) => t.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Tipo de chatarra" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -173,12 +174,10 @@ export function RecepcionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Calidad <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(calidades.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Calidad">
-                      {field.value ? calidades.find((c) => c.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Calidad" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -241,16 +240,13 @@ export function RecepcionForm({
             <FormItem>
               <FormLabel>Proveedor <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
               <Select
+                items={{ __none__: 'Sin proveedor', ...Object.fromEntries(proveedores.map(p => [p.id, p.nombre])) }}
                 onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
                 value={field.value || '__none__'}
               >
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Sin proveedor">
-                      {field.value
-                        ? proveedores.find((p) => p.id === field.value)?.nombre
-                        : 'Sin proveedor'}
-                    </SelectValue>
+                    <SelectValue placeholder="Sin proveedor" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -302,7 +298,7 @@ export function RecepcionForm({
           disabled={pending}
           className="w-full h-14 text-base font-semibold"
         >
-          {pending ? 'Guardando...' : 'Registrar recepción'}
+          {pending ? 'Guardando...' : editId ? 'Actualizar recepción' : 'Registrar recepción'}
         </Button>
 
       </form>

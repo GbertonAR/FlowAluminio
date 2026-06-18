@@ -7,7 +7,7 @@
  * @summary    Listado de pagos de chatarra del mes — Comercial (PRD §8.19)
  */
 import Link from 'next/link'
-import { Plus, ArrowDownLeft } from 'lucide-react'
+import { Plus, ArrowDownLeft, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { SelectorMes } from '@/components/selector-mes'
@@ -79,7 +79,12 @@ export default async function PagosPage({ searchParams }: Props) {
                   {p.observacion && (
                     <p className="text-xs text-muted-foreground">{p.observacion as string}</p>
                   )}
-                  <AnularButton onAnular={anularPago.bind(null, p.id)} />
+                  <div className="flex items-center gap-2">
+                    <Link href={`/comercial/pagos/${p.id}/editar`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Link>
+                    <AnularButton onAnular={anularPago.bind(null, p.id)} />
+                  </div>
                 </CardContent>
               </Card>
             ))}

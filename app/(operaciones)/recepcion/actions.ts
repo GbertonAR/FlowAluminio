@@ -84,6 +84,64 @@ export async function crearRecepcion(
   return { success: true, data: { id: recepcion.id } }
 }
 
+export async function getRecepcionById(id: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('recepciones')
+    .select('id, fecha, cliente_id, proveedor_id, tipo_chatarra_id, calidad_id, kg_fisicos, remito, observacion')
+    .eq('id', id)
+    .single()
+  return data
+}
+
+export async function actualizarRecepcion(id: string, data: RecepcionFormData): Promise<ActionResult> {
+  const parsed = recepcionSchema.safeParse(data)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'No autenticado' }
+
+  const { data: perfil } = await supabase
+    .from('perfiles').select('empresa_id').eq('id', user.id).single()
+  if (!perfil?.empresa_id) return { success: false, error: 'Perfil sin empresa' }
+
+  const { data: mermaRow } = await supabase
+    .from('mermas_consensuadas')
+    .select('merma_pct')
+    .eq('empresa_id', perfil.empresa_id)
+    .eq('cliente_id', parsed.data.cliente_id)
+    .eq('tipo_chatarra_id', parsed.data.tipo_chatarra_id)
+    .lte('vigencia_desde', parsed.data.fecha)
+    .or('vigencia_hasta.is.null,vigencia_hasta.gte.' + parsed.data.fecha)
+    .eq('activo', true)
+    .order('vigencia_desde', { ascending: false })
+    .limit(1)
+    .single()
+
+  const mermaPct = mermaRow?.merma_pct ?? 0
+  const { kgMermaComercial, kgReconocidos } = calcularKgReconocidos(parsed.data.kg_fisicos, mermaPct)
+
+  const { error } = await supabase.from('recepciones').update({
+    fecha:            parsed.data.fecha,
+    cliente_id:       parsed.data.cliente_id,
+    proveedor_id:     parsed.data.proveedor_id || null,
+    tipo_chatarra_id: parsed.data.tipo_chatarra_id,
+    calidad_id:       parsed.data.calidad_id,
+    kg_fisicos:       parsed.data.kg_fisicos,
+    merma_pct:        mermaPct,
+    kg_merma_comercial: kgMermaComercial,
+    kg_reconocidos:   kgReconocidos,
+    remito:           parsed.data.remito || null,
+    observacion:      parsed.data.observacion || null,
+    updated_at:       new Date().toISOString(),
+  }).eq('id', id)
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/operaciones/recepcion')
+  return { success: true }
+}
+
 export async function getRecepciones(fecha?: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

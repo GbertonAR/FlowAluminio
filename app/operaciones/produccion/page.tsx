@@ -7,7 +7,7 @@
  * @summary    Listado de coladas del día — mobile-first
  */
 import Link from 'next/link'
-import { Plus, Flame } from 'lucide-react'
+import { Plus, Flame, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -117,7 +117,12 @@ export default async function ProduccionListPage({ searchParams }: Props) {
                     <span>Mix 1ª: <strong>{pct(p.mix_1ra_pct)}</strong></span>
                     <span>Mix 2ª: <strong>{pct(p.mix_2da_pct)}</strong></span>
                   </div>
-                  <AnularButton onAnular={anularProduccion.bind(null, p.id)} />
+                  <div className="flex items-center gap-2">
+                    <Link href={`/operaciones/produccion/${p.id}/editar`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                      <Pencil className="h-3 w-3" /> Editar
+                    </Link>
+                    <AnularButton onAnular={anularProduccion.bind(null, p.id)} />
+                  </div>
                 </CardContent>
               </Card>
             ))}

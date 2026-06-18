@@ -76,6 +76,40 @@ export async function crearCobro(values: {
   return { success: true }
 }
 
+export async function getCobroById(id: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('cobros')
+    .select('id, fecha, cliente_id, importe, medio_pago_id, observacion')
+    .eq('id', id)
+    .single()
+  return data
+}
+
+export async function actualizarCobro(id: string, values: {
+  fecha: string; cliente_id: string; importe: number; medio_pago_id: string; observacion?: string
+}): Promise<ActionResult> {
+  const parsed = cobroSchema.safeParse(values)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Sin sesión' }
+
+  const { error } = await supabase.from('cobros').update({
+    fecha:         parsed.data.fecha,
+    cliente_id:    parsed.data.cliente_id,
+    importe:       parsed.data.importe,
+    medio_pago_id: parsed.data.medio_pago_id,
+    observacion:   parsed.data.observacion || null,
+    updated_at:    new Date().toISOString(),
+  }).eq('id', id)
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/cobros')
+  return { success: true }
+}
+
 export async function anularCobro(id: string, motivo: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

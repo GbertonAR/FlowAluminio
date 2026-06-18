@@ -86,6 +86,61 @@ export async function crearProduccion(
   return { success: true, data: { id: produccion.id } }
 }
 
+export async function getProduccionById(id: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('producciones_coladas')
+    .select('id, fecha, numero_colada, cliente_destino_id, propietario_1ra_id, propietario_2da_id, kg_1ra, kg_2da, kg_tocho, kg_escoria, kg_remanente_recibido, kg_remanente_dejado, producto_id, observaciones')
+    .eq('id', id)
+    .single()
+  return data
+}
+
+export async function actualizarProduccion(id: string, data: ProduccionFormData): Promise<ActionResult> {
+  const parsed = produccionSchema.safeParse(data)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'No autenticado' }
+
+  const d = parsed.data
+  const calc = calcularColada({
+    kg1ra: d.kg_1ra, kg2da: d.kg_2da, kgTocho: d.kg_tocho, kgEscoria: d.kg_escoria,
+    kgRemanenteRecibido: d.kg_remanente_recibido, kgRemanenteEntregado: d.kg_remanente_dejado,
+  })
+
+  const { error } = await supabase.from('producciones_coladas').update({
+    fecha:                d.fecha,
+    numero_colada:        d.numero_colada,
+    cliente_destino_id:   d.cliente_destino_id,
+    propietario_1ra_id:   d.propietario_1ra_id || d.cliente_destino_id,
+    propietario_2da_id:   d.propietario_2da_id || d.cliente_destino_id,
+    kg_1ra:               d.kg_1ra,
+    kg_2da:               d.kg_2da,
+    kg_tocho:             d.kg_tocho,
+    kg_escoria:           d.kg_escoria,
+    kg_remanente_recibido: d.kg_remanente_recibido,
+    kg_remanente_dejado:  d.kg_remanente_dejado,
+    kg_chatarra_total:    calc.kgChatarraTotal,
+    kg_metal_disponible:  calc.kgMetalDisponible,
+    kg_volatilizado:      calc.kgVolatilizado,
+    escoria_pct:          calc.escoriaPct,
+    volatilizacion_pct:   calc.volatilizacionPct,
+    rendimiento_pct:      calc.rendimientoPct,
+    merma_productiva_pct: calc.mermaProductivaPct,
+    mix_1ra_pct:          calc.mix1raPct,
+    mix_2da_pct:          calc.mix2daPct,
+    producto_id:          d.producto_id || null,
+    observaciones:        d.observaciones || null,
+    updated_at:           new Date().toISOString(),
+  }).eq('id', id)
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/operaciones/produccion')
+  return { success: true }
+}
+
 export async function getProduccionesDelDia(fecha: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

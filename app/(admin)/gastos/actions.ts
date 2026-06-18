@@ -44,6 +44,44 @@ export async function getMaestrosGasto() {
   }
 }
 
+export async function getGastoById(id: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('gastos')
+    .select('id, fecha, categoria_id, concepto, proveedor_id, importe, medio_pago_id, caja_chica_id, observacion')
+    .eq('id', id)
+    .single()
+  return data
+}
+
+export async function actualizarGasto(id: string, values: {
+  fecha: string; categoria_id?: string; concepto: string; proveedor_id?: string
+  importe: number; medio_pago_id: string; caja_chica_id?: string; observacion?: string
+}): Promise<ActionResult> {
+  const parsed = gastoSchema.safeParse(values)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Sin sesión' }
+
+  const { error } = await supabase.from('gastos').update({
+    fecha:         parsed.data.fecha,
+    categoria_id:  parsed.data.categoria_id || null,
+    concepto:      parsed.data.concepto,
+    proveedor_id:  parsed.data.proveedor_id || null,
+    importe:       parsed.data.importe,
+    medio_pago_id: parsed.data.medio_pago_id,
+    caja_chica_id: parsed.data.caja_chica_id || null,
+    observacion:   parsed.data.observacion || null,
+    updated_at:    new Date().toISOString(),
+  }).eq('id', id)
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/admin/gastos')
+  return { success: true }
+}
+
 export async function crearGasto(formData: FormData) {
   const raw = {
     fecha:         formData.get('fecha') as string,

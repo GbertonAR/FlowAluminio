@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 import { Camera } from 'lucide-react'
 
 import { gastoSchema, type GastoFormData } from '@/lib/validations/gasto'
-import { crearGasto } from '@/app/(admin)/gastos/actions'
+import { crearGasto, actualizarGasto } from '@/app/(admin)/gastos/actions'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,9 +42,11 @@ interface GastoFormProps {
   categorias:  Maestro[]
   proveedores: Maestro[]
   cajaAbierta: CajaAbierta | null
+  editId?: string
+  initialData?: Partial<GastoFormData>
 }
 
-export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormProps) {
+export function GastoForm({ categorias, proveedores, cajaAbierta, editId, initialData }: GastoFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const archivoRef = useRef<File | null>(null)
@@ -52,28 +54,32 @@ export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormPro
   const form = useForm<GastoFormData>({
     resolver: zodResolver(gastoSchema) as Resolver<GastoFormData>,
     defaultValues: {
-      fecha:         new Date().toISOString().split('T')[0],
-      categoria_id:  '',
-      concepto:      '',
-      proveedor_id:  '',
-      importe:       undefined,
-      medio_pago_id: '',
-      caja_chica_id: cajaAbierta?.id ?? '',
-      observacion:   '',
+      fecha:         initialData?.fecha         ?? new Date().toISOString().split('T')[0],
+      categoria_id:  initialData?.categoria_id  ?? '',
+      concepto:      initialData?.concepto      ?? '',
+      proveedor_id:  initialData?.proveedor_id  ?? '',
+      importe:       initialData?.importe       ?? undefined,
+      medio_pago_id: initialData?.medio_pago_id ?? '',
+      caja_chica_id: initialData?.caja_chica_id ?? cajaAbierta?.id ?? '',
+      observacion:   initialData?.observacion   ?? '',
     },
   })
 
   function onSubmit(values: GastoFormData) {
     startTransition(async () => {
-      const fd = new FormData()
-      Object.entries(values).forEach(([k, v]) => {
-        if (v != null && v !== '') fd.append(k, String(v))
-      })
-      if (archivoRef.current) fd.append('comprobante', archivoRef.current)
-
-      const result = await crearGasto(fd)
+      let result
+      if (editId) {
+        result = await actualizarGasto(editId, values)
+      } else {
+        const fd = new FormData()
+        Object.entries(values).forEach(([k, v]) => {
+          if (v != null && v !== '') fd.append(k, String(v))
+        })
+        if (archivoRef.current) fd.append('comprobante', archivoRef.current)
+        result = await crearGasto(fd)
+      }
       if (result.success) {
-        toast.success('Gasto registrado')
+        toast.success(editId ? 'Gasto actualizado' : 'Gasto registrado')
         router.push('/admin/gastos')
       } else {
         toast.error(result.error ?? 'Error al guardar')
@@ -144,12 +150,10 @@ export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormPro
           render={({ field }) => (
             <FormItem>
               <FormLabel>Medio de pago <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={MEDIOS_PAGO} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el medio">
-                      {field.value ? MEDIOS_PAGO.find((m) => m.value === field.value)?.label : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná el medio" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -169,12 +173,10 @@ export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormPro
           render={({ field }) => (
             <FormItem>
               <FormLabel>Categoría <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(categorias.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Sin categoría">
-                      {field.value ? categorias.find((c) => c.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Sin categoría" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -194,12 +196,10 @@ export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormPro
           render={({ field }) => (
             <FormItem>
               <FormLabel>Proveedor <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(proveedores.map(p => [p.id, p.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Sin proveedor">
-                      {field.value ? proveedores.find((p) => p.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Sin proveedor" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -257,7 +257,7 @@ export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormPro
         />
 
         <Button type="submit" disabled={pending} className="w-full h-14 text-base font-semibold">
-          {pending ? 'Guardando...' : 'Registrar gasto'}
+          {pending ? 'Guardando...' : editId ? 'Actualizar gasto' : 'Registrar gasto'}
         </Button>
 
       </form>

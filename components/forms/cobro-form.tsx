@@ -15,7 +15,7 @@ import { useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { cobroSchema, type CobroFormData } from '@/lib/validations/cobro'
-import { crearCobro } from '@/app/(admin)/cobros/actions'
+import { crearCobro, actualizarCobro } from '@/app/(admin)/cobros/actions'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,28 +38,32 @@ interface Maestro { id: string; nombre: string }
 
 interface CobroFormProps {
   clientes: Maestro[]
+  editId?: string
+  initialData?: Partial<CobroFormData>
 }
 
-export function CobroForm({ clientes }: CobroFormProps) {
+export function CobroForm({ clientes, editId, initialData }: CobroFormProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
   const form = useForm<CobroFormData>({
     resolver: zodResolver(cobroSchema) as Resolver<CobroFormData>,
     defaultValues: {
-      fecha:         new Date().toISOString().split('T')[0],
-      cliente_id:    '',
-      importe:       undefined,
-      medio_pago_id: '',
-      observacion:   '',
+      fecha:         initialData?.fecha         ?? new Date().toISOString().split('T')[0],
+      cliente_id:    initialData?.cliente_id    ?? '',
+      importe:       initialData?.importe       ?? undefined,
+      medio_pago_id: initialData?.medio_pago_id ?? '',
+      observacion:   initialData?.observacion   ?? '',
     },
   })
 
   function onSubmit(values: CobroFormData) {
     startTransition(async () => {
-      const result = await crearCobro(values)
+      const result = editId
+        ? await actualizarCobro(editId, values)
+        : await crearCobro(values)
       if (result.success) {
-        toast.success('Cobro registrado')
+        toast.success(editId ? 'Cobro actualizado' : 'Cobro registrado')
         router.push('/admin/cobros')
       } else {
         toast.error(result.error ?? 'Error al guardar')
@@ -91,12 +95,10 @@ export function CobroForm({ clientes }: CobroFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={Object.fromEntries(clientes.map(c => [c.id, c.nombre]))} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el cliente">
-                      {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná el cliente" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -141,12 +143,10 @@ export function CobroForm({ clientes }: CobroFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Medio de pago <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
+              <Select items={MEDIOS_PAGO} onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el medio">
-                      {field.value ? MEDIOS_PAGO.find((m) => m.value === field.value)?.label : undefined}
-                    </SelectValue>
+                    <SelectValue placeholder="Seleccioná el medio" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -175,7 +175,7 @@ export function CobroForm({ clientes }: CobroFormProps) {
         />
 
         <Button type="submit" disabled={pending} className="w-full h-14 text-base font-semibold">
-          {pending ? 'Guardando...' : 'Registrar cobro'}
+          {pending ? 'Guardando...' : editId ? 'Actualizar cobro' : 'Registrar cobro'}
         </Button>
 
       </form>
