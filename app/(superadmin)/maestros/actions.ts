@@ -203,6 +203,31 @@ export async function crearPrecio(values: Record<string, string>): Promise<Actio
   return { success: true }
 }
 
+export async function actualizarPrecio(id: string, values: Record<string, string>): Promise<ActionResult> {
+  const admin = createAdminClient()
+  const precio = parseFloat(values.precio)
+  if (isNaN(precio) || precio <= 0) return { success: false, error: 'El precio debe ser mayor a 0' }
+  const { error } = await admin.from('precios_comerciales').update({
+    cliente_id:     values.cliente_id,
+    tipo_operacion: values.tipo_operacion,
+    precio,
+    vigencia_desde: values.vigencia_desde,
+    vigencia_hasta: values.vigencia_hasta?.trim() || null,
+    updated_at:     new Date().toISOString(),
+  }).eq('id', id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/superadmin/maestros/precios')
+  return { success: true }
+}
+
+export async function eliminarPrecio(id: string): Promise<ActionResult> {
+  const admin = createAdminClient()
+  const { error } = await admin.from('precios_comerciales').delete().eq('id', id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/superadmin/maestros/precios')
+  return { success: true }
+}
+
 export async function togglePrecio(id: string, activo: boolean): Promise<ActionResult> {
   const admin = createAdminClient()
   const { error } = await admin.from('precios_comerciales').update({ activo }).eq('id', id)

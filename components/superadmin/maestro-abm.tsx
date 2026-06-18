@@ -10,7 +10,7 @@
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Plus, Pencil, ChevronUp } from 'lucide-react'
+import { Plus, Pencil, ChevronUp, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import type { ActionResult } from '@/types'
@@ -38,12 +38,13 @@ interface Props {
   onCrear:      (values: Record<string, string>) => Promise<ActionResult>
   onActualizar?: (id: string, values: Record<string, string>) => Promise<ActionResult>
   onToggle:     (id: string, activo: boolean) => Promise<ActionResult>
+  onEliminar?:  (id: string) => Promise<ActionResult>
   labelNuevo:   string
 }
 
 export function MaestroABM({
   items, campos,
-  onCrear, onActualizar, onToggle, labelNuevo,
+  onCrear, onActualizar, onToggle, onEliminar, labelNuevo,
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -110,6 +111,16 @@ export function MaestroABM({
     start(async () => {
       const result = await onToggle(id, !(activo ?? true))
       if (!result.success) toast.error(result.error ?? 'Error')
+    })
+  }
+
+  function eliminar(id: string) {
+    if (!onEliminar) return
+    if (!confirm('¿Eliminar definitivamente este registro? Esta acción no se puede deshacer.')) return
+    start(async () => {
+      const result = await onEliminar(id)
+      if (result.success) toast.success('Eliminado')
+      else toast.error(result.error ?? 'Error al eliminar')
     })
   }
 
@@ -201,6 +212,18 @@ export function MaestroABM({
               >
                 {isActive ? 'Baja' : 'Alta'}
               </Button>
+              {onEliminar && !isActive && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                  disabled={pending}
+                  onClick={() => eliminar(item.id)}
+                  title="Eliminar definitivamente"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
           </div>
           {isEditing && renderFields()}

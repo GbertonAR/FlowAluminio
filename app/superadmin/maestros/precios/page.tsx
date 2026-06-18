@@ -11,7 +11,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MaestroABM } from '@/components/superadmin/maestro-abm'
 import type { FieldDef } from '@/components/superadmin/maestro-abm'
-import { getPrecios, crearPrecio, togglePrecio, getClientes } from '@/app/(superadmin)/maestros/actions'
+import { getPrecios, crearPrecio, actualizarPrecio, eliminarPrecio, togglePrecio, getClientes } from '@/app/(superadmin)/maestros/actions'
 
 const TIPOS_OP = [
   { value: 'fason',  label: 'Fassón' },
@@ -63,7 +63,9 @@ export default async function PreciosPage() {
           })}
           campos={CAMPOS}
           onCrear={crearPrecio}
+          onActualizar={actualizarPrecio}
           onToggle={togglePrecio}
+          onEliminar={eliminarPrecio}
           labelNuevo="Nuevo precio"
         />
       </main>
