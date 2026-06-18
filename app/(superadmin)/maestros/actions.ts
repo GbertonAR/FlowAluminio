@@ -11,6 +11,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { registrarEvento } from '@/lib/auditoria'
 import type { ActionResult } from '@/types'
 
 async function getEmpresaId(): Promise<string | null> {
@@ -20,6 +21,16 @@ async function getEmpresaId(): Promise<string | null> {
   const admin = createAdminClient()
   const { data } = await admin.from('perfiles').select('empresa_id').eq('id', user.id).single()
   return data?.empresa_id ?? null
+}
+
+async function getContext() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const admin = createAdminClient()
+  const { data } = await admin.from('perfiles').select('empresa_id').eq('id', user.id).single()
+  if (!data?.empresa_id) return null
+  return { admin, userId: user.id, empresaId: data.empresa_id }
 }
 
 // ─── CLIENTES ────────────────────────────────────────────────────────────────
@@ -37,22 +48,25 @@ export async function getClientes() {
 }
 
 export async function crearCliente(values: Record<string, string>): Promise<ActionResult> {
-  const admin = createAdminClient()
-  const empresaId = await getEmpresaId()
-  if (!empresaId) return { success: false, error: 'No autenticado' }
-  const { error } = await admin.from('clientes').insert({
+  const ctx = await getContext()
+  if (!ctx) return { success: false, error: 'No autenticado' }
+  const { admin, userId, empresaId } = ctx
+  const { data, error } = await admin.from('clientes').insert({
     empresa_id:    empresaId,
     nombre:        values.nombre.trim(),
     tipo:          values.tipo || 'cliente',
     observaciones: values.observaciones?.trim() || null,
-  })
+  }).select('id').single()
   if (error) return { success: false, error: error.message }
+  await registrarEvento({ supabase: admin, empresaId, usuarioId: userId, accion: 'CREACION', tabla: 'clientes', registroId: data.id, valorNuevo: values })
   revalidatePath('/superadmin/maestros/clientes')
   return { success: true }
 }
 
 export async function actualizarCliente(id: string, values: Record<string, string>): Promise<ActionResult> {
-  const admin = createAdminClient()
+  const ctx = await getContext()
+  if (!ctx) return { success: false, error: 'No autenticado' }
+  const { admin, userId, empresaId } = ctx
   const { error } = await admin.from('clientes').update({
     nombre:        values.nombre.trim(),
     tipo:          values.tipo,
@@ -60,14 +74,18 @@ export async function actualizarCliente(id: string, values: Record<string, strin
     updated_at:    new Date().toISOString(),
   }).eq('id', id)
   if (error) return { success: false, error: error.message }
+  await registrarEvento({ supabase: admin, empresaId, usuarioId: userId, accion: 'MODIFICACION', tabla: 'clientes', registroId: id, valorNuevo: values })
   revalidatePath('/superadmin/maestros/clientes')
   return { success: true }
 }
 
 export async function toggleCliente(id: string, activo: boolean): Promise<ActionResult> {
-  const admin = createAdminClient()
+  const ctx = await getContext()
+  if (!ctx) return { success: false, error: 'No autenticado' }
+  const { admin, userId, empresaId } = ctx
   const { error } = await admin.from('clientes').update({ activo }).eq('id', id)
   if (error) return { success: false, error: error.message }
+  await registrarEvento({ supabase: admin, empresaId, usuarioId: userId, accion: 'MODIFICACION', tabla: 'clientes', registroId: id, motivo: activo ? 'Alta' : 'Baja', valorNuevo: { activo } })
   revalidatePath('/superadmin/maestros/clientes')
   return { success: true }
 }
@@ -87,23 +105,26 @@ export async function getProveedores() {
 }
 
 export async function crearProveedor(values: Record<string, string>): Promise<ActionResult> {
-  const admin = createAdminClient()
-  const empresaId = await getEmpresaId()
-  if (!empresaId) return { success: false, error: 'No autenticado' }
-  const { error } = await admin.from('proveedores').insert({
+  const ctx = await getContext()
+  if (!ctx) return { success: false, error: 'No autenticado' }
+  const { admin, userId, empresaId } = ctx
+  const { data, error } = await admin.from('proveedores').insert({
     empresa_id: empresaId,
     nombre:     values.nombre.trim(),
     tipo:       values.tipo?.trim() || null,
     cuit:       values.cuit?.trim() || null,
     telefono:   values.telefono?.trim() || null,
-  })
+  }).select('id').single()
   if (error) return { success: false, error: error.message }
+  await registrarEvento({ supabase: admin, empresaId, usuarioId: userId, accion: 'CREACION', tabla: 'proveedores', registroId: data.id, valorNuevo: values })
   revalidatePath('/superadmin/maestros/proveedores')
   return { success: true }
 }
 
 export async function actualizarProveedor(id: string, values: Record<string, string>): Promise<ActionResult> {
-  const admin = createAdminClient()
+  const ctx = await getContext()
+  if (!ctx) return { success: false, error: 'No autenticado' }
+  const { admin, userId, empresaId } = ctx
   const { error } = await admin.from('proveedores').update({
     nombre:   values.nombre.trim(),
     tipo:     values.tipo?.trim() || null,
@@ -111,14 +132,18 @@ export async function actualizarProveedor(id: string, values: Record<string, str
     telefono: values.telefono?.trim() || null,
   }).eq('id', id)
   if (error) return { success: false, error: error.message }
+  await registrarEvento({ supabase: admin, empresaId, usuarioId: userId, accion: 'MODIFICACION', tabla: 'proveedores', registroId: id, valorNuevo: values })
   revalidatePath('/superadmin/maestros/proveedores')
   return { success: true }
 }
 
 export async function toggleProveedor(id: string, activo: boolean): Promise<ActionResult> {
-  const admin = createAdminClient()
+  const ctx = await getContext()
+  if (!ctx) return { success: false, error: 'No autenticado' }
+  const { admin, userId, empresaId } = ctx
   const { error } = await admin.from('proveedores').update({ activo }).eq('id', id)
   if (error) return { success: false, error: error.message }
+  await registrarEvento({ supabase: admin, empresaId, usuarioId: userId, accion: 'MODIFICACION', tabla: 'proveedores', registroId: id, motivo: activo ? 'Alta' : 'Baja', valorNuevo: { activo } })
   revalidatePath('/superadmin/maestros/proveedores')
   return { success: true }
 }
@@ -221,9 +246,12 @@ export async function actualizarPrecio(id: string, values: Record<string, string
 }
 
 export async function eliminarPrecio(id: string): Promise<ActionResult> {
-  const admin = createAdminClient()
+  const ctx = await getContext()
+  if (!ctx) return { success: false, error: 'No autenticado' }
+  const { admin, userId, empresaId } = ctx
   const { error } = await admin.from('precios_comerciales').delete().eq('id', id)
   if (error) return { success: false, error: error.message }
+  await registrarEvento({ supabase: admin, empresaId, usuarioId: userId, accion: 'ANULACION', tabla: 'precios_comerciales', registroId: id, motivo: 'Eliminado definitivamente' })
   revalidatePath('/superadmin/maestros/precios')
   return { success: true }
 }
