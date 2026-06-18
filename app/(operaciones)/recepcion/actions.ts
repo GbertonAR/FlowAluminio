@@ -76,7 +76,7 @@ export async function crearRecepcion(
     .select('id')
     .single()
 
-  if (error) return { success: false, error: error.message }
+  if (error) return { success: false, error: `${error.message} [${error.code}]` }
 
   revalidatePath('/operaciones/recepcion')
   revalidatePath('/dashboard/operaciones')

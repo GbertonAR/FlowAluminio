@@ -123,10 +123,12 @@ export function RecepcionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente / Cuenta <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná un cliente" />
+                    <SelectValue placeholder="Seleccioná un cliente">
+                      {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -146,10 +148,12 @@ export function RecepcionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tipo de chatarra <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Tipo de chatarra" />
+                    <SelectValue placeholder="Tipo de chatarra">
+                      {field.value ? tiposChatarra.find((t) => t.id === field.value)?.nombre : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -169,10 +173,12 @@ export function RecepcionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Calidad <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Calidad" />
+                    <SelectValue placeholder="Calidad">
+                      {field.value ? calidades.find((c) => c.id === field.value)?.nombre : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -234,13 +240,21 @@ export function RecepcionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Proveedor <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select
+                onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
+                value={field.value || '__none__'}
+              >
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Proveedor (opcional)" />
+                    <SelectValue placeholder="Sin proveedor">
+                      {field.value
+                        ? proveedores.find((p) => p.id === field.value)?.nombre
+                        : 'Sin proveedor'}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="__none__">Sin proveedor</SelectItem>
                   {proveedores.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
                   ))}

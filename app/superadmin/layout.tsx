@@ -8,13 +8,14 @@
  */
 'use client'
 
-import { Home, ScrollText, Users, Settings } from 'lucide-react'
+import { Home, ScrollText, Users, Settings, Database } from 'lucide-react'
 import { NavBar } from '@/components/nav-bar'
 
 const NAV_ITEMS = [
   { href: '/dashboard/superadmin',  label: 'Inicio',    Icon: Home },
   { href: '/superadmin/auditoria',  label: 'Auditoría', Icon: ScrollText },
   { href: '/superadmin/usuarios',   label: 'Usuarios',  Icon: Users },
+  { href: '/superadmin/maestros',   label: 'Maestros',  Icon: Database },
   { href: '/superadmin/parametros', label: 'Config',    Icon: Settings },
 ]
 

@@ -20,15 +20,21 @@ import {
   crearTipoChatarra,
   toggleTipoChatarra,
 } from '@/app/(superadmin)/parametros/actions'
+import {
+  getCalidades, crearCalidad, toggleCalidad,
+  getProductos, crearProducto, toggleProducto,
+} from '@/app/(superadmin)/maestros/actions'
 import { ParametroInlineEditor } from '@/components/superadmin/parametro-inline-editor'
 import { ParametroLista } from '@/components/superadmin/parametro-lista'
 
 export default async function ParametrosPage() {
-  const [empresa, plantas, categorias, tiposChatarra] = await Promise.all([
+  const [empresa, plantas, categorias, tiposChatarra, calidades, productos] = await Promise.all([
     getEmpresa(),
     getPlantas(),
     getCategoriasGasto(),
     getTiposChatarra(),
+    getCalidades(),
+    getProductos(),
   ])
 
   return (
@@ -94,6 +100,36 @@ export default async function ParametrosPage() {
               onCrear={crearTipoChatarra}
               onToggle={toggleTipoChatarra}
               placeholder="Nuevo tipo..."
+            />
+          </CardContent>
+        </Card>
+
+        {/* Calidades de chatarra */}
+        <Card>
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-sm text-muted-foreground">Calidades de chatarra</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <ParametroLista
+              items={calidades.map((c) => ({ id: c.id, nombre: c.nombre, activo: c.activo ?? true }))}
+              onCrear={crearCalidad}
+              onToggle={toggleCalidad}
+              placeholder="Nueva calidad..."
+            />
+          </CardContent>
+        </Card>
+
+        {/* Productos */}
+        <Card>
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-sm text-muted-foreground">Productos</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <ParametroLista
+              items={productos.map((p) => ({ id: p.id, nombre: p.nombre, activo: p.activo ?? true }))}
+              onCrear={crearProducto}
+              onToggle={toggleProducto}
+              placeholder="Nuevo producto..."
             />
           </CardContent>
         </Card>
