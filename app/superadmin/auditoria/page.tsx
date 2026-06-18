@@ -26,12 +26,18 @@ const TABLAS = ['recepciones', 'despachos', 'producciones_coladas', 'presentismo
 const ACCIONES = ['CREACION', 'MODIFICACION', 'ANULACION', 'CIERRE', 'APROBACION']
 
 export default async function AuditoriaPage({ searchParams }: Props) {
-  const params  = await searchParams
+  const params = await searchParams
+
+  const hoy         = new Date()
+  const primeroMes  = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+  const defaultDesde = params.desde ?? primeroMes.toISOString().split('T')[0]
+  const defaultHasta = params.hasta ?? hoy.toISOString().split('T')[0]
+
   const eventos = await getEventosAuditoria({
     tabla:  params.tabla,
     accion: params.accion,
-    desde:  params.desde,
-    hasta:  params.hasta,
+    desde:  defaultDesde,
+    hasta:  defaultHasta,
   })
 
   return (
@@ -63,13 +69,13 @@ export default async function AuditoriaPage({ searchParams }: Props) {
           <input
             name="desde"
             type="date"
-            defaultValue={params.desde ?? ''}
+            defaultValue={defaultDesde}
             className="h-10 rounded-md border bg-background px-2 text-sm col-span-1"
           />
           <input
             name="hasta"
             type="date"
-            defaultValue={params.hasta ?? ''}
+            defaultValue={defaultHasta}
             className="h-10 rounded-md border bg-background px-2 text-sm col-span-1"
           />
           <button
