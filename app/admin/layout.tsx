@@ -8,7 +8,7 @@
  */
 'use client'
 
-import { Home, Receipt, DollarSign, Wallet, Users, LockKeyhole } from 'lucide-react'
+import { Home, Receipt, DollarSign, Wallet, Users, FileText } from 'lucide-react'
 import { NavBar } from '@/components/nav-bar'
 
 const NAV_ITEMS = [
@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { href: '/admin/cobros',             label: 'Cobros',   Icon: DollarSign },
   { href: '/admin/caja',               label: 'Caja',     Icon: Wallet },
   { href: '/admin/liquidaciones',      label: 'Liquidar', Icon: Users },
-  { href: '/admin/cierres',            label: 'Cierres',  Icon: LockKeyhole },
+  { href: '/admin/comprobantes',       label: 'Docs',     Icon: FileText },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

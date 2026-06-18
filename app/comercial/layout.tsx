@@ -8,14 +8,14 @@
  */
 'use client'
 
-import { Home, Scale, Truck, BarChart2, RefreshCcw, TrendingUp } from 'lucide-react'
+import { Home, Scale, Truck, ArrowDownLeft, RefreshCcw, TrendingUp } from 'lucide-react'
 import { NavBar } from '@/components/nav-bar'
 
 const NAV_ITEMS = [
   { href: '/dashboard/comercial',      label: 'Inicio',    Icon: Home },
   { href: '/comercial/saldos',         label: 'Saldos',    Icon: Scale },
   { href: '/comercial/despachos',      label: 'Despachos', Icon: Truck },
-  { href: '/comercial/mermas',         label: 'Mermas',    Icon: BarChart2 },
+  { href: '/comercial/pagos',          label: 'Pagos',     Icon: ArrowDownLeft },
   { href: '/comercial/conciliaciones', label: 'Conciliar', Icon: RefreshCcw },
   { href: '/comercial/margenes',       label: 'Márgenes',  Icon: TrendingUp },
 ]

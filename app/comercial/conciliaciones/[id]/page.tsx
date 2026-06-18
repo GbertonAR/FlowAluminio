@@ -9,8 +9,12 @@
 import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { getConciliacionDetalle, cerrarConciliacion } from '@/app/(comercial)/conciliaciones/actions'
+import {
+  getConciliacionDetalle, cerrarConciliacion,
+  registrarAjuste, observarConciliacion, getAjustesConciliacion,
+} from '@/app/(comercial)/conciliaciones/actions'
 import { CerrarConciliacionButton } from '@/components/forms/cerrar-conciliacion-button'
+import { AjusteConciliacionButton } from '@/components/forms/ajuste-conciliacion-button'
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -24,12 +28,15 @@ function fmtFecha(d: string) {
 
 export default async function ConciliacionDetallePage({ params }: Props) {
   const { id } = await params
-  const det = await getConciliacionDetalle(id)
+  const [det, ajustes] = await Promise.all([
+    getConciliacionDetalle(id),
+    getAjustesConciliacion(id),
+  ])
 
   if (!det) notFound()
 
   const { conciliacion: c, recepciones, despachos, cobros, resumen } = det
-  const esBorrador = c.estado === 'borrador'
+  const puedeEditar = !['cerrada', 'anulada'].includes(c.estado)
 
   return (
     <div className="min-h-screen bg-background">
@@ -154,12 +161,41 @@ export default async function ConciliacionDetallePage({ params }: Props) {
           </Card>
         )}
 
-        {/* Cerrar */}
-        {esBorrador && (
-          <CerrarConciliacionButton
-            conciliacionId={c.id}
-            onCerrar={(obs) => cerrarConciliacion(c.id, obs)}
-          />
+        {/* Ajustes */}
+        {ajustes.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
+              Ajustes registrados ({ajustes.length})
+            </p>
+            {ajustes.map((a) => (
+              <Card key={a.id}>
+                <CardContent className="py-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <Badge variant="outline" className="text-[10px]">
+                      {a.tipo === 'fisico' ? 'Físico' : 'Comercial'}
+                    </Badge>
+                    <span className={Number(a.kg_ajuste) >= 0 ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
+                      {Number(a.kg_ajuste) > 0 ? '+' : ''}{Number(a.kg_ajuste).toFixed(0)} kg
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{a.motivo}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Acciones (solo cuando no está cerrada) */}
+        {puedeEditar && (
+          <div className="space-y-2 pb-4">
+            <AjusteConciliacionButton
+              onAjuste={(tipo, kgAjuste, motivo) => registrarAjuste(c.id, tipo, kgAjuste, motivo)}
+            />
+            <CerrarConciliacionButton
+              conciliacionId={c.id}
+              onCerrar={(obs) => cerrarConciliacion(c.id, obs)}
+            />
+          </div>
         )}
 
       </main>

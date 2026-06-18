@@ -7,13 +7,15 @@
  * @summary    Dashboard Comercial — KPIs del mes: saldos, despachos pendientes de valorizar, cobros
  */
 import Link from 'next/link'
-import { Scale, Truck, DollarSign, RefreshCcw, AlertCircle, ChevronRight } from 'lucide-react'
+import { Scale, Truck, DollarSign, RefreshCcw, AlertCircle, ChevronRight, ArrowDownLeft, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UserChip } from '@/components/user-chip'
 import { Card, CardContent } from '@/components/ui/card'
 import { getSaldosClientes } from '@/app/(comercial)/saldos/actions'
 import { getDespachosPendientes } from '@/app/(comercial)/valorizacion/actions'
 import { getCobros } from '@/app/(admin)/cobros/actions'
+import { getPagos } from '@/app/(comercial)/pagos/actions'
+import { getConciliaciones } from '@/app/(comercial)/conciliaciones/actions'
 
 function fmtPeso(n: number) {
   return n.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 })
@@ -22,16 +24,20 @@ function fmtPeso(n: number) {
 export default async function DashboardComercialPage() {
   const mes = new Date().toISOString().slice(0, 7)
 
-  const [saldos, despachos, cobros] = await Promise.all([
+  const [saldos, despachos, cobros, pagos, conciliaciones] = await Promise.all([
     getSaldosClientes(),
     getDespachosPendientes(mes),
     getCobros(mes),
+    getPagos(mes),
+    getConciliaciones(),
   ])
 
-  const pendientesValorizar = despachos.filter((d) => !d.valorizado).length
-  const totalKgSaldo        = saldos.reduce((s, c) => s + c.kgSaldo, 0)
-  const totalACobrar        = saldos.reduce((s, c) => s + c.saldoFinanciero, 0)
-  const totalCobradoMes     = cobros.reduce((s, c) => s + (c.importe ?? 0), 0)
+  const pendientesValorizar     = despachos.filter((d) => !d.valorizado).length
+  const totalKgSaldo            = saldos.reduce((s, c) => s + c.kgSaldo, 0)
+  const totalACobrar            = saldos.reduce((s, c) => s + c.saldoFinanciero, 0)
+  const totalCobradoMes         = cobros.reduce((s, c) => s + (c.importe ?? 0), 0)
+  const totalPagadoMes          = pagos.reduce((s, p) => s + (p.importe ?? 0), 0)
+  const conciliacionesPendientes = conciliaciones.filter((c) => c.estado !== 'cerrada' && c.estado !== 'anulada').length
 
   return (
     <div className="min-h-screen bg-background">
@@ -87,6 +93,20 @@ export default async function DashboardComercialPage() {
               <p className="text-xl font-bold">{fmtPeso(totalCobradoMes)}</p>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="py-3 text-center">
+              <p className="text-xs text-muted-foreground">Pagado este mes</p>
+              <p className="text-xl font-bold text-destructive">{fmtPeso(totalPagadoMes)}</p>
+            </CardContent>
+          </Card>
+          <Card className={conciliacionesPendientes > 0 ? 'border-amber-500/50' : ''}>
+            <CardContent className="py-3 text-center">
+              <p className="text-xs text-muted-foreground">Concil. pendientes</p>
+              <p className={`text-2xl font-bold ${conciliacionesPendientes > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                {conciliacionesPendientes}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -102,9 +122,17 @@ export default async function DashboardComercialPage() {
             <DollarSign className="h-5 w-5" />
             <span className="text-xs">Registrar cobro</span>
           </Button>
+          <Button render={<Link href="/comercial/pagos/nueva" />} variant="outline" className="h-16 flex-col gap-1">
+            <ArrowDownLeft className="h-5 w-5" />
+            <span className="text-xs">Registrar pago</span>
+          </Button>
           <Button render={<Link href="/comercial/conciliaciones" />} variant="outline" className="h-16 flex-col gap-1">
             <RefreshCcw className="h-5 w-5" />
             <span className="text-xs">Conciliar</span>
+          </Button>
+          <Button render={<Link href="/comercial/margenes" />} variant="outline" className="h-16 flex-col gap-1">
+            <TrendingUp className="h-5 w-5" />
+            <span className="text-xs">Márgenes</span>
           </Button>
         </div>
       </main>

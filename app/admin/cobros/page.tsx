@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { SelectorMes } from '@/components/selector-mes'
 import { EmptyState } from '@/components/empty-state'
-import { getCobros } from '@/app/(admin)/cobros/actions'
+import { getCobros, anularCobro } from '@/app/(admin)/cobros/actions'
+import { AnularButton } from '@/components/anular-button'
 
 interface Props { searchParams: Promise<{ mes?: string }> }
 
@@ -58,16 +59,19 @@ export default async function CobrosPage({ searchParams }: Props) {
           <div className="space-y-3">
             {cobros.map((c) => (
               <Card key={c.id}>
-                <CardContent className="py-3 flex items-center justify-between gap-2">
-                  <div>
-                    <p className="font-medium">
-                      {(c.clientes as unknown as { nombre: string } | null)?.nombre ?? '—'}
+                <CardContent className="py-3 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="font-medium">
+                        {(c.clientes as unknown as { nombre: string } | null)?.nombre ?? '—'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{c.fecha} · {c.medio_pago_id}</p>
+                    </div>
+                    <p className="font-bold text-lg text-green-600">
+                      ${(c.importe as number).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                     </p>
-                    <p className="text-xs text-muted-foreground">{c.fecha} · {c.medio_pago_id}</p>
                   </div>
-                  <p className="font-bold text-lg text-green-600">
-                    ${(c.importe as number).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                  </p>
+                  <AnularButton onAnular={(motivo) => anularCobro(c.id, motivo)} />
                 </CardContent>
               </Card>
             ))}

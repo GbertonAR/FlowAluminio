@@ -11,12 +11,15 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { gastoSchema } from '@/lib/validations/gasto'
+import { anularRegistro } from '@/lib/auditoria'
+import type { ActionResult } from '@/types'
 
 export async function getGastos(fecha?: string) {
   const supabase = await createClient()
   let q = supabase
     .from('gastos')
-    .select('*, categorias_gasto(nombre), proveedores(nombre)')
+    .select('id, fecha, concepto, importe, medio_pago_id, estado, caja_chica_id, categorias_gasto(nombre), proveedores(nombre)')
+    .neq('estado', 'anulado')
     .order('fecha', { ascending: false })
     .limit(50)
 
@@ -113,5 +116,39 @@ export async function crearGasto(formData: FormData) {
   }
 
   revalidatePath('/admin/gastos')
+  return { success: true }
+}
+
+export async function anularGasto(id: string, motivo: string): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'No autenticado' }
+
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single()
+  if (!perfil?.empresa_id) return { success: false, error: 'Perfil sin empresa' }
+
+  const { data: registro } = await supabase.from('gastos').select('*').eq('id', id).single()
+
+  const { error } = await anularRegistro({
+    supabase, empresaId: perfil.empresa_id, usuarioId: user.id,
+    tabla: 'gastos', registroId: id, motivo,
+    valorAnterior: registro ?? undefined,
+  })
+
+  if (error) return { success: false, error }
+
+  // Revertir total_gastado en caja chica si aplica
+  if (registro?.caja_chica_id && registro?.importe) {
+    const { data: caja } = await supabase
+      .from('caja_chica').select('total_gastado').eq('id', registro.caja_chica_id).single()
+    if (caja) {
+      await supabase.from('caja_chica').update({
+        total_gastado: Math.max(0, (caja.total_gastado ?? 0) - (registro.importe as number)),
+      }).eq('id', registro.caja_chica_id)
+    }
+  }
+
+  revalidatePath('/admin/gastos')
+  revalidatePath('/dashboard/operaciones')
   return { success: true }
 }

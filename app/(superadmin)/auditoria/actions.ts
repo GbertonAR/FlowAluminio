@@ -45,6 +45,7 @@ export async function getEstadisticasSistema() {
     { count: eventosHoy },
     { count: anulacionesMes },
     { data: tablasMasActivas },
+    { data: usuariosData },
   ] = await Promise.all([
     supabase.from('perfiles').select('*', { count: 'exact', head: true }).eq('activo', true),
     supabase.from('auditoria_eventos').select('*', { count: 'exact', head: true }).gte('created_at', hoy),
@@ -52,6 +53,7 @@ export async function getEstadisticasSistema() {
       .eq('accion', 'ANULACION')
       .gte('created_at', hoy.slice(0, 7) + '-01'),
     supabase.from('auditoria_eventos').select('tabla').gte('created_at', hoy.slice(0, 7) + '-01'),
+    supabase.from('perfiles').select('rol').eq('activo', true),
   ])
 
   const conteoTablas = (tablasMasActivas ?? []).reduce<Record<string, number>>((acc, e) => {
@@ -64,10 +66,52 @@ export async function getEstadisticasSistema() {
     .slice(0, 5)
     .map(([tabla, count]) => ({ tabla, count }))
 
+  const usuariosPorRol = (usuariosData ?? []).reduce<Record<string, number>>((acc, p) => {
+    acc[p.rol] = (acc[p.rol] ?? 0) + 1
+    return acc
+  }, {})
+
   return {
     totalUsuarios:   totalUsuarios ?? 0,
     eventosHoy:      eventosHoy ?? 0,
     anulacionesMes:  anulacionesMes ?? 0,
     tablaTop,
+    usuariosPorRol,
+  }
+}
+
+const TABLAS_SENSIBLES = [
+  'mermas_consensuadas', 'precios_comerciales', 'liquidaciones',
+  'caja_chica', 'conciliaciones_cliente', 'recepciones',
+]
+
+export async function getCambiosSensibles() {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('auditoria_eventos')
+    .select('id, accion, tabla, motivo, created_at, perfiles(nombre)')
+    .in('tabla', TABLAS_SENSIBLES)
+    .in('accion', ['MODIFICACION', 'ANULACION', 'CIERRE', 'APROBACION'])
+    .order('created_at', { ascending: false })
+    .limit(6)
+  return data ?? []
+}
+
+export async function getAlertasSistema() {
+  const supabase = await createClient()
+  const [
+    { count: comprobantesPendientes },
+    { count: cajaObservada },
+    { count: conciliacionesPendientes },
+  ] = await Promise.all([
+    supabase.from('comprobantes').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
+    supabase.from('caja_chica').select('*', { count: 'exact', head: true }).eq('estado', 'observada'),
+    supabase.from('conciliaciones_cliente').select('*', { count: 'exact', head: true })
+      .in('estado', ['observada', 'en_revision']),
+  ])
+  return {
+    comprobantesPendientes: comprobantesPendientes ?? 0,
+    cajaObservada:          cajaObservada ?? 0,
+    conciliacionesPendientes: conciliacionesPendientes ?? 0,
   }
 }

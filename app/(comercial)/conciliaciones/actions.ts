@@ -244,10 +244,68 @@ export async function cerrarConciliacion(id: string, observacion?: string): Prom
       cerrada_by:  user.id,
     })
     .eq('id', id)
-    .eq('estado', 'borrador')
+    .not('estado', 'in', '("cerrada","anulada")')
 
   if (error) return { success: false, error: error.message }
 
   revalidatePath('/comercial/conciliaciones')
+  revalidatePath(`/comercial/conciliaciones/${id}`)
   return { success: true }
+}
+
+export async function observarConciliacion(id: string, motivo: string): Promise<ActionResult> {
+  if (!motivo.trim()) return { success: false, error: 'El motivo es requerido' }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('conciliaciones_cliente')
+    .update({ estado: 'observada', observacion: motivo })
+    .eq('id', id)
+    .not('estado', 'in', '("cerrada","anulada")')
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/comercial/conciliaciones')
+  revalidatePath(`/comercial/conciliaciones/${id}`)
+  return { success: true }
+}
+
+export async function registrarAjuste(
+  conciliacionId: string,
+  tipo: 'fisico' | 'comercial',
+  kgAjuste: number,
+  motivo: string
+): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'No autenticado' }
+
+  const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single()
+  if (!perfil?.empresa_id) return { success: false, error: 'Perfil sin empresa' }
+
+  const { error } = await supabase.from('ajustes_conciliacion').insert({
+    empresa_id:     perfil.empresa_id,
+    conciliacion_id: conciliacionId,
+    tipo,
+    kg_ajuste:      kgAjuste,
+    motivo,
+    created_by:     user.id,
+  })
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/comercial/conciliaciones/${conciliacionId}`)
+  return { success: true }
+}
+
+export async function getAjustesConciliacion(conciliacionId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('ajustes_conciliacion')
+    .select('id, tipo, kg_ajuste, motivo, created_at')
+    .eq('conciliacion_id', conciliacionId)
+    .order('created_at')
+  // Devuelve [] si la tabla no existe aún (migration 008 pendiente)
+  if (error) return []
+  return data ?? []
 }

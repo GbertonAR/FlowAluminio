@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { SelectorFecha } from '@/components/selector-fecha'
 import { EmptyState } from '@/components/empty-state'
-import { getGastos } from '@/app/(admin)/gastos/actions'
+import { getGastos, anularGasto } from '@/app/(admin)/gastos/actions'
+import { AnularButton } from '@/components/anular-button'
 
 interface Props { searchParams: Promise<{ fecha?: string }> }
 
@@ -71,6 +72,7 @@ export default async function GastosPage({ searchParams }: Props) {
                     )}
                     <span>{g.medio_pago_id}</span>
                   </div>
+                  <AnularButton onAnular={(motivo) => anularGasto(g.id, motivo)} />
                 </CardContent>
               </Card>
             ))}

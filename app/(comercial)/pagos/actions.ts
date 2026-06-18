@@ -1,56 +1,54 @@
 /**
  * @system     FlowAluminio
- * @module     app/(admin)/cobros/actions.ts
+ * @module     app/(comercial)/pagos/actions.ts
  * @copyright  © 2026 Gustavo Berton
  * @author     Gustavo Berton
- * @created    2026-06-05
- * @summary    Cobros a clientes — registro y consulta
+ * @created    2026-06-18
+ * @summary    Pagos de chatarra a proveedores — CRUD + anulación auditada (PRD §8.19)
  */
 'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { cobroSchema } from '@/lib/validations/cobro'
+import { pagoSchema } from '@/lib/validations/pago'
 import { anularRegistro } from '@/lib/auditoria'
 import type { ActionResult } from '@/types'
 
-export async function getCobros(mes?: string) {
+export async function getPagos(mes?: string) {
   const supabase = await createClient()
   let q = supabase
-    .from('cobros')
-    .select('id, fecha, importe, medio_pago_id, observacion, estado, clientes(nombre)')
+    .from('pagos')
+    .select('id, fecha, importe, medio_pago_id, observacion, estado, proveedores(nombre), clientes(nombre)')
     .neq('estado', 'anulado')
     .order('fecha', { ascending: false })
     .limit(50)
 
-  if (mes) {
-    q = q.gte('fecha', `${mes}-01`).lte('fecha', `${mes}-31`)
-  }
+  if (mes) q = q.gte('fecha', `${mes}-01`).lte('fecha', `${mes}-31`)
 
   const { data, error } = await q
   if (error) return []
   return data
 }
 
-export async function getMaestrosCobro() {
+export async function getMaestrosPago() {
   const supabase = await createClient()
-  const { data: clientes } = await supabase
-    .from('clientes')
+  const { data: proveedores } = await supabase
+    .from('proveedores')
     .select('id, nombre')
     .eq('activo', true)
     .order('nombre')
 
-  return { clientes: clientes ?? [] }
+  return { proveedores: proveedores ?? [] }
 }
 
-export async function crearCobro(values: {
+export async function crearPago(values: {
   fecha: string
-  cliente_id: string
+  proveedor_id: string
   importe: number
   medio_pago_id: string
   observacion?: string
-}) {
-  const parsed = cobroSchema.safeParse(values)
+}): Promise<ActionResult> {
+  const parsed = pagoSchema.safeParse(values)
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
 
   const supabase = await createClient()
@@ -60,23 +58,24 @@ export async function crearCobro(values: {
   const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single()
   if (!perfil) return { success: false, error: 'Perfil no encontrado' }
 
-  const { error } = await supabase.from('cobros').insert({
+  const { error } = await supabase.from('pagos').insert({
     empresa_id:    perfil.empresa_id,
     fecha:         parsed.data.fecha,
-    cliente_id:    parsed.data.cliente_id,
+    proveedor_id:  parsed.data.proveedor_id,
     importe:       parsed.data.importe,
     medio_pago_id: parsed.data.medio_pago_id,
     observacion:   parsed.data.observacion || null,
     created_by:    user.id,
+    estado:        'confirmado',
   })
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath('/admin/cobros')
+  revalidatePath('/comercial/pagos')
   return { success: true }
 }
 
-export async function anularCobro(id: string, motivo: string): Promise<ActionResult> {
+export async function anularPago(id: string, motivo: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'No autenticado' }
@@ -84,17 +83,17 @@ export async function anularCobro(id: string, motivo: string): Promise<ActionRes
   const { data: perfil } = await supabase.from('perfiles').select('empresa_id').eq('id', user.id).single()
   if (!perfil?.empresa_id) return { success: false, error: 'Perfil sin empresa' }
 
-  const { data: registro } = await supabase.from('cobros').select('*').eq('id', id).single()
+  const { data: registro } = await supabase.from('pagos').select('*').eq('id', id).single()
 
   const { error } = await anularRegistro({
     supabase, empresaId: perfil.empresa_id, usuarioId: user.id,
-    tabla: 'cobros', registroId: id, motivo,
+    tabla: 'pagos', registroId: id, motivo,
     valorAnterior: registro ?? undefined,
   })
 
   if (error) return { success: false, error }
 
-  revalidatePath('/admin/cobros')
+  revalidatePath('/comercial/pagos')
   revalidatePath('/dashboard/comercial')
   return { success: true }
 }

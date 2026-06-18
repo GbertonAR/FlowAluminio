@@ -16,16 +16,18 @@ import { getRecepciones } from '@/app/(operaciones)/recepcion/actions'
 import { getProduccionesDelDia } from '@/app/(operaciones)/produccion/actions'
 import { getDespachosDelDia } from '@/app/(operaciones)/despacho/actions'
 import { getPresentismoDelDia, getEmpleados } from '@/app/(operaciones)/presentismo/actions'
+import { getCajaAbierta } from '@/app/(admin)/caja/actions'
 
 export default async function DashboardOperacionesPage() {
   const hoy = new Date().toISOString().split('T')[0]
 
-  const [recepciones, producciones, despachos, presentismo, empleados] = await Promise.all([
+  const [recepciones, producciones, despachos, presentismo, empleados, cajaAbierta] = await Promise.all([
     getRecepciones(hoy),
     getProduccionesDelDia(hoy),
     getDespachosDelDia(hoy),
     getPresentismoDelDia(hoy),
     getEmpleados(),
+    getCajaAbierta(),
   ])
 
   const kgFisicos   = recepciones.reduce((s, r) => s + (r.kg_fisicos ?? 0), 0)
@@ -162,6 +164,20 @@ export default async function DashboardOperacionesPage() {
             </CardContent>
           </Card>
         </Link>
+
+        {/* Caja chica */}
+        {cajaAbierta && (
+          <Link href="/admin/caja" className="block">
+            <Card className="hover:bg-muted/30 transition-colors border-green-200 dark:border-green-900/40">
+              <CardContent className="px-3 py-3">
+                <p className="text-xs text-muted-foreground mb-1">Caja chica disponible</p>
+                <p className="text-xl font-bold text-green-600">
+                  ${((cajaAbierta.monto_inicial as number) - (cajaAbierta.total_gastado as number)).toLocaleString('es-AR', { minimumFractionDigits: 0 })}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
         <div className="pt-2">
           <Button render={<Link href="/operaciones/inventario" />} variant="outline" className="w-full h-11">

@@ -7,14 +7,18 @@
  * @summary    Dashboard Superadmin — KPIs del sistema y accesos rápidos
  */
 import Link from 'next/link'
-import { ScrollText, Users, Settings, AlertTriangle } from 'lucide-react'
+import { ScrollText, Users, Settings, AlertTriangle, Bell, Activity } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { UserChip } from '@/components/user-chip'
-import { getEstadisticasSistema } from '@/app/(superadmin)/auditoria/actions'
+import { getEstadisticasSistema, getCambiosSensibles, getAlertasSistema } from '@/app/(superadmin)/auditoria/actions'
 
 export default async function SuperadminDashboardPage() {
-  const stats = await getEstadisticasSistema()
+  const [stats, cambiosSensibles, alertas] = await Promise.all([
+    getEstadisticasSistema(),
+    getCambiosSensibles(),
+    getAlertasSistema(),
+  ])
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,6 +65,82 @@ export default async function SuperadminDashboardPage() {
                 <div key={tabla} className="flex items-center justify-between text-sm">
                   <span className="font-mono text-xs">{tabla}</span>
                   <span className="font-medium">{count}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Usuarios por rol */}
+        {Object.keys(stats.usuariosPorRol).length > 0 && (
+          <Card>
+            <CardContent className="py-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                Usuarios activos por rol
+              </p>
+              {Object.entries(stats.usuariosPorRol).map(([rol, count]) => (
+                <div key={rol} className="flex items-center justify-between text-sm">
+                  <span className="capitalize">{rol.replace('_', ' ')}</span>
+                  <span className="font-medium">{count}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Alertas del sistema */}
+        {(alertas.comprobantesPendientes > 0 || alertas.cajaObservada > 0 || alertas.conciliacionesPendientes > 0) && (
+          <Card className="border-amber-500/50">
+            <CardContent className="py-3 space-y-2">
+              <p className="text-xs font-medium text-amber-600 uppercase tracking-wide flex items-center gap-1">
+                <Bell className="h-3 w-3" />
+                Alertas del sistema
+              </p>
+              {alertas.comprobantesPendientes > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Comprobantes pendientes</span>
+                  <span className="font-medium text-amber-600">{alertas.comprobantesPendientes}</span>
+                </div>
+              )}
+              {alertas.cajaObservada > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Cajas observadas</span>
+                  <span className="font-medium text-amber-600">{alertas.cajaObservada}</span>
+                </div>
+              )}
+              {alertas.conciliacionesPendientes > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Conciliaciones en revisión</span>
+                  <span className="font-medium text-amber-600">{alertas.conciliacionesPendientes}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Cambios sensibles recientes */}
+        {cambiosSensibles.length > 0 && (
+          <Card>
+            <CardContent className="py-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                <Activity className="h-3 w-3" />
+                Cambios sensibles recientes
+              </p>
+              {cambiosSensibles.map((e) => (
+                <div key={e.id} className="flex items-start justify-between gap-2 text-xs">
+                  <div className="min-w-0">
+                    <span className="font-medium">{e.accion}</span>
+                    <span className="text-muted-foreground"> · {e.tabla}</span>
+                    {e.motivo && (
+                      <p className="text-muted-foreground truncate">
+                        {(e.perfiles as unknown as { nombre: string } | null)?.nombre ?? 'Sistema'} — {e.motivo as string}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-muted-foreground shrink-0">
+                    {new Date(e.created_at as string).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+                  </span>
                 </div>
               ))}
             </CardContent>
