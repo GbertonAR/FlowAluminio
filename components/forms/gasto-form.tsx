@@ -144,10 +144,12 @@ export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormPro
           render={({ field }) => (
             <FormItem>
               <FormLabel>Medio de pago <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el medio" />
+                    <SelectValue placeholder="Seleccioná el medio">
+                      {field.value ? MEDIOS_PAGO.find((m) => m.value === field.value)?.label : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -167,10 +169,12 @@ export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormPro
           render={({ field }) => (
             <FormItem>
               <FormLabel>Categoría <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Sin categoría" />
+                    <SelectValue placeholder="Sin categoría">
+                      {field.value ? categorias.find((c) => c.id === field.value)?.nombre : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -190,10 +194,12 @@ export function GastoForm({ categorias, proveedores, cajaAbierta }: GastoFormPro
           render={({ field }) => (
             <FormItem>
               <FormLabel>Proveedor <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Sin proveedor" />
+                    <SelectValue placeholder="Sin proveedor">
+                      {field.value ? proveedores.find((p) => p.id === field.value)?.nombre : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

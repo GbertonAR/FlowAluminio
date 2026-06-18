@@ -139,9 +139,11 @@ export function LiquidacionForm({ empleados }: LiquidacionFormProps) {
 
           <div className="space-y-1">
             <Label>Empleado</Label>
-            <Select value={empleadoId} onValueChange={(v) => setEmpleadoId(v ?? '')}>
+            <Select value={empleadoId || undefined} onValueChange={(v) => setEmpleadoId(v ?? '')}>
               <SelectTrigger className="h-12 text-base">
-                <SelectValue placeholder="Seleccioná el empleado" />
+                <SelectValue placeholder="Seleccioná el empleado">
+                  {empleadoId ? empleados.find((e) => e.id === empleadoId)?.nombre : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {empleados.map((e) => (

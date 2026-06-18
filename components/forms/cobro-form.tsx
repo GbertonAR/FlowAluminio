@@ -91,10 +91,12 @@ export function CobroForm({ clientes }: CobroFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el cliente" />
+                    <SelectValue placeholder="Seleccioná el cliente">
+                      {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -139,10 +141,12 @@ export function CobroForm({ clientes }: CobroFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Medio de pago <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el medio" />
+                    <SelectValue placeholder="Seleccioná el medio">
+                      {field.value ? MEDIOS_PAGO.find((m) => m.value === field.value)?.label : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

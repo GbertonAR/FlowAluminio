@@ -162,10 +162,12 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente destino <span className="text-destructive">*</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Seleccioná el cliente" />
+                    <SelectValue placeholder="Seleccioná el cliente">
+                      {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -372,10 +374,12 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
           render={({ field }) => (
             <FormItem>
               <FormLabel>Producto <span className="text-muted-foreground text-xs">(opcional)</span></FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Tipo de producto" />
+                    <SelectValue placeholder="Tipo de producto">
+                      {field.value ? productos.find((p) => p.id === field.value)?.nombre : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -397,10 +401,12 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Propietario 1ª <span className="text-muted-foreground">(opc.)</span></FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger className="h-11 text-sm">
-                      <SelectValue placeholder="Cliente..." />
+                      <SelectValue placeholder="Cliente...">
+                        {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
+                      </SelectValue>
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -418,10 +424,12 @@ export function ProduccionForm({ clientes, productos, recetaVigente }: Produccio
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Propietario 2ª <span className="text-muted-foreground">(opc.)</span></FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger className="h-11 text-sm">
-                      <SelectValue placeholder="Cliente..." />
+                      <SelectValue placeholder="Cliente...">
+                        {field.value ? clientes.find((c) => c.id === field.value)?.nombre : undefined}
+                      </SelectValue>
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
