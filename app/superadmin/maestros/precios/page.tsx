@@ -52,16 +52,16 @@ export default async function PreciosPage() {
 
       <main className="px-4 py-4 max-w-lg mx-auto">
         <MaestroABM
-          items={precios}
+          items={precios.map((p) => {
+            const cli  = p.clientes as unknown as { nombre: string } | null
+            const tipo = TIPOS_OP.find((t) => t.value === p.tipo_operacion)?.label ?? p.tipo_operacion as string
+            return {
+              ...p,
+              _nombre:    cli?.nombre ?? '—',
+              _subtitulo: `${tipo} · ${fmtPeso(p.precio)}/kg · desde ${p.vigencia_desde as string}`,
+            }
+          })}
           campos={CAMPOS}
-          getNombre={(item) => {
-            const cli = item.clientes as { nombre: string } | null
-            return cli?.nombre ?? '—'
-          }}
-          getSubtitulo={(item) => {
-            const tipo = TIPOS_OP.find((t) => t.value === item.tipo_operacion)?.label ?? item.tipo_operacion as string
-            return `${tipo} · ${fmtPeso(item.precio)}/kg · desde ${item.vigencia_desde as string}`
-          }}
           onCrear={crearPrecio}
           onToggle={togglePrecio}
           labelNuevo="Nuevo precio"

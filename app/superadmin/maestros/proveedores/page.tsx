@@ -39,16 +39,14 @@ export default async function ProveedoresPage() {
 
       <main className="px-4 py-4 max-w-lg mx-auto">
         <MaestroABM
-          items={proveedores}
-          campos={CAMPOS}
-          getNombre={(item) => item.nombre as string}
-          getSubtitulo={(item) => {
+          items={proveedores.map((p) => {
             const parts: string[] = []
-            if (item.tipo)     parts.push(item.tipo as string)
-            if (item.cuit)     parts.push(`CUIT: ${item.cuit}`)
-            if (item.telefono) parts.push(item.telefono as string)
-            return parts.join(' · ') || undefined
-          }}
+            if (p.tipo)     parts.push(p.tipo as string)
+            if (p.cuit)     parts.push(`CUIT: ${p.cuit}`)
+            if (p.telefono) parts.push(p.telefono as string)
+            return { ...p, _nombre: p.nombre as string, _subtitulo: parts.join(' · ') || undefined }
+          })}
+          campos={CAMPOS}
           onCrear={crearProveedor}
           onActualizar={actualizarProveedor}
           onToggle={toggleProveedor}

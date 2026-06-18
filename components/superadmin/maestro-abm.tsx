@@ -25,16 +25,16 @@ export type FieldDef = {
 }
 
 export interface ItemABM {
-  id:     string
-  activo: boolean | null
+  id:         string
+  activo:     boolean | null
+  _nombre:    string
+  _subtitulo?: string
   [key: string]: unknown
 }
 
 interface Props {
   items:        ItemABM[]
   campos:       FieldDef[]
-  getNombre:    (item: ItemABM) => string
-  getSubtitulo?: (item: ItemABM) => string | undefined
   onCrear:      (values: Record<string, string>) => Promise<ActionResult>
   onActualizar?: (id: string, values: Record<string, string>) => Promise<ActionResult>
   onToggle:     (id: string, activo: boolean) => Promise<ActionResult>
@@ -42,7 +42,7 @@ interface Props {
 }
 
 export function MaestroABM({
-  items, campos, getNombre, getSubtitulo,
+  items, campos,
   onCrear, onActualizar, onToggle, labelNuevo,
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -164,7 +164,6 @@ export function MaestroABM({
   function renderItem(item: ItemABM) {
     const isEditing = editingId === item.id
     const isActive  = item.activo !== false
-    const subtitulo = getSubtitulo?.(item)
 
     return (
       <Card key={item.id} className={!isActive ? 'opacity-60' : ''}>
@@ -172,10 +171,10 @@ export function MaestroABM({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <p className={`text-sm font-medium leading-snug ${!isActive ? 'line-through text-muted-foreground' : ''}`}>
-                {getNombre(item)}
+                {item._nombre}
               </p>
-              {subtitulo && (
-                <p className="text-[11px] text-muted-foreground mt-0.5">{subtitulo}</p>
+              {item._subtitulo && (
+                <p className="text-[11px] text-muted-foreground mt-0.5">{item._subtitulo}</p>
               )}
             </div>
             <div className="flex gap-1 shrink-0 mt-0.5">

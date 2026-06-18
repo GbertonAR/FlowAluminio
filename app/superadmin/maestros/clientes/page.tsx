@@ -44,13 +44,12 @@ export default async function ClientesPage() {
 
       <main className="px-4 py-4 max-w-lg mx-auto">
         <MaestroABM
-          items={clientes}
+          items={clientes.map((c) => ({
+            ...c,
+            _nombre:    c.nombre as string,
+            _subtitulo: TIPOS_CLIENTE.find((t) => t.value === (c.tipo as string))?.label ?? (c.tipo as string) ?? undefined,
+          }))}
           campos={CAMPOS}
-          getNombre={(item) => item.nombre as string}
-          getSubtitulo={(item) => {
-            const tipo = item.tipo as string
-            return TIPOS_CLIENTE.find((t) => t.value === tipo)?.label ?? tipo
-          }}
           onCrear={crearCliente}
           onActualizar={actualizarCliente}
           onToggle={toggleCliente}

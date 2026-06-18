@@ -41,10 +41,12 @@ export default async function EmpleadosPage() {
 
       <main className="px-4 py-4 max-w-lg mx-auto">
         <MaestroABM
-          items={empleados}
+          items={empleados.map((e) => ({
+            ...e,
+            _nombre:    e.nombre as string,
+            _subtitulo: e.fecha_alta ? `Alta: ${fmtFecha(e.fecha_alta as string)}` : undefined,
+          }))}
           campos={CAMPOS}
-          getNombre={(item) => item.nombre as string}
-          getSubtitulo={(item) => item.fecha_alta ? `Alta: ${fmtFecha(item.fecha_alta as string)}` : undefined}
           onCrear={crearEmpleado}
           onActualizar={actualizarEmpleado}
           onToggle={toggleEmpleado}
